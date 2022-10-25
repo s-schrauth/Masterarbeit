@@ -1,0 +1,73 @@
+---
+title: "Initializing"
+author: "Simon Schrauth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Technical Initialization of the Project
+
+## Goal
+
+After executing this script, one has the technical set-up which allows the reproduction of the project. This includes the installation of all R-packages as well as Python-packages used in this project in the correct versions.
+
+## Prerequisites
+
+Although most programs and packages (as R and Python) are installed automatically through this script, there are a few programs, one has to check - and maybe install/update - by hand. This includes Anaconda/MiniConda (at least version 22.9.0) which can be downloaded here: <https://docs.conda.io/en/latest/miniconda.html>
+
+## R & R-Packages
+
+For the automated installation of R and the R-packages, the renv-package is used. After cloning the complete repo (including the renv folder and the renv.lock file) and executing the following command, every R-package used in this project should be installed (if not already installed on the local computer).
+
+```{r}
+#renv::restore()
+```
+
+## Pandoc for RMarkdown
+
+Pandoc is an external program which is used by RMarkdown. As it is prone to trouble through different versions, the Pandoc version will be fixed for this project through the following commands.
+
+```{r}
+library(pandoc)
+library(gh)
+
+pandoc::pandoc_install("2.19.2")
+pandoc::pandoc_activate("2.19.2")
+```
+
+## Python & Python-Modules
+
+For the automated installation of Python and the Python-packages, a conda environment ("Masterarbeit") is created with regard to the specifications saved in the "Masterarbeit.yaml" file. After that, the conda environment is activated and the Python version is printed - which should be 3.10.6.
+
+```{r}
+library(reticulate)
+
+reticulate::conda_create(envname = "Masterarbeit",
+                         environment = "Masterarbeit.yaml")
+
+reticulate::use_condaenv(condaenv = "Masterarbeit", 
+                         required = TRUE)
+
+reticulate::py_config()
+```
+
+If the installation has worked, the following commands should print the number pi.
+
+```{python}
+import numpy as np
+np.pi
+```
+
+## just for me: neue Python-Module installieren
+
+```{r}
+reticulate::conda_install(envname = "Masterarbeit",
+                          packages = "xxx")
+```
+
+## just for me 2: .yaml aktualisieren
+
+```{r}
+reticulate::conda_export(envname = "Masterarbeit",
+                         file = "Masterarbeit_test.yaml") # ohne "_test"
+```
