@@ -1,0 +1,39 @@
+---
+title: "Initializing"
+author: "Simon Schrauth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+## Goal of this script
+After executing this script, one can use Python in an RMarkdown script. 
+
+## Install "pacman" as R package manager and "reticulate" as bridge between R and Python
+```{r}
+library(pacman)
+pacman::p_load(reticulate)
+```
+
+## Use python environment "masterarbeit" which has to be created in the first hand (via Anaconda) 
+```{r}
+use_condaenv(condaenv = "masterarbeit", required = TRUE)
+py_config()
+```
+## Check if 
+```{python}
+import numpy as np
+np.pi
+```
+
+
+
+
+### neu
+
+Pandoc-Version: 2.19.2
+R-Version: 4.2.1 
+
+```{r}
+library(c(tidyverse, wesanderson))
+
+```
+
