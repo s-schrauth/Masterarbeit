@@ -37,13 +37,18 @@ pandoc::pandoc_activate("2.19.2")
 
 ## Python & Python-Modules
 
-For the automated installation of Python and the Python-packages, a conda environment ("Masterarbeit") is created with regard to the specifications saved in the "Masterarbeit.yaml" file. After that, the conda environment is activated and the Python version is printed - which should be 3.10.6.
+For the automated installation of Python and the Python-packages, a conda environment ("Masterarbeit") is created with regard to the specifications saved in the "Masterarbeit.yaml" file (for Windows) or the "Masterarbeit_Mac_Linux.yaml" file (for Mac & Linux). After that, the conda environment is activated and the Python version is printed - which should be 3.10.6.
 
 ```{r}
 library(reticulate)
 
+# only for Windows
 reticulate::conda_create(envname = "Masterarbeit",
                          environment = "Masterarbeit.yaml")
+
+# only for Mac & Linux
+reticulate::conda_create(envname = "Masterarbeit",
+                         environment = "Masterarbeit_Mac_Linux.yaml")
 
 reticulate::use_condaenv(condaenv = "Masterarbeit", 
                          required = TRUE)
@@ -68,6 +73,6 @@ reticulate::conda_install(envname = "Masterarbeit",
 ## just for me 2: .yaml aktualisieren
 
 ```{r}
-reticulate::conda_export(envname = "Masterarbeit",
-                         file = "Masterarbeit_test.yaml") # ohne "_test"
+# reticulate::conda_export(envname = "Masterarbeit",
+#                          file = "Masterarbeit_test.yaml") # ohne "_test"
 ```
