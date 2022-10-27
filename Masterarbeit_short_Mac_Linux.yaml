@@ -1,0 +1,16 @@
+name: Masterarbeit
+channels:
+  - defaults
+dependencies:
+  - keras
+  - matplotlib
+  - numpy
+  - pandas
+  - python=3.10.6
+  - pytorch
+  - scikit-learn
+  - scipy
+  - seaborn
+  - tensorflow
+  - xgboost
+prefix: C:\Users\simon\miniconda3\envs\Masterarbeit
