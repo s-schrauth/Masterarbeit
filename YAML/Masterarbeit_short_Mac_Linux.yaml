@@ -1,5 +1,6 @@
 name: Masterarbeit
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - keras
@@ -11,6 +12,6 @@ dependencies:
   - scikit-learn
   - scipy
   - seaborn
-  - tensorflow
   - xgboost
+  - tensorflow
 prefix: C:\Users\simon\miniconda3\envs\Masterarbeit

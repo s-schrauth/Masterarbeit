@@ -17,6 +17,22 @@ Although most programs and packages (as R and Python) are installed automaticall
 
 ## R & R-Packages
 
+
+```{r}
+# only for Windows!
+
+if(!require(installr)) install.packages("installr")
+if(!require(remotes)) install.packages("remotes")
+
+installr::install.Rtools(check = TRUE, check_r_update = FALSE)
+
+ifelse(!require(stringi),
+       remotes::install_version("stringi", version = "1.7.8", upgrade="never"),
+       if(packageVersion("stringi")!="1.7.8") remotes::install_version("stringi", version = "1.7.8", upgrade="never")
+       )
+```
+
+
 For the automated installation of R and the R-packages, the renv-package is used. After cloning the complete repo (including the renv folder and the renv.lock file) and executing the following command, every R-package used in this project should be installed (if not already installed on the local computer).
 
 ```{r}
@@ -41,14 +57,17 @@ For the automated installation of Python and the Python-packages, a conda enviro
 
 ```{r}
 library(reticulate)
+library(here)
 
 # only for Windows
 reticulate::conda_create(envname = "Masterarbeit",
-                         environment = "Masterarbeit.yaml")
+                         environment = here("YAML", "Masterarbeit_short.yaml")
+                         )
 
 # only for Mac & Linux
 reticulate::conda_create(envname = "Masterarbeit",
-                         environment = "Masterarbeit_Mac_Linux.yaml")
+                         environment = here("YAML", "Masterarbeit_short_Mac_Linux.yaml")
+                         )
 
 reticulate::use_condaenv(condaenv = "Masterarbeit", 
                          required = TRUE)
@@ -70,9 +89,3 @@ reticulate::conda_install(envname = "Masterarbeit",
                           packages = "xxx")
 ```
 
-## just for me 2: .yaml aktualisieren
-
-```{r}
-# reticulate::conda_export(envname = "Masterarbeit",
-#                          file = "Masterarbeit_test.yaml") # ohne "_test"
-```
