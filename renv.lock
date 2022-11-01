@@ -227,6 +227,16 @@
       "Hash": "6154ec2223172bce8162d4153cda21f7",
       "Requirements": []
     },
+    "installr": {
+      "Package": "installr",
+      "Version": "0.23.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "966ef0acdb7a49a2ec26eb5c74077903",
+      "Requirements": [
+        "stringr"
+      ]
+    },
     "jquerylib": {
       "Package": "jquerylib",
       "Version": "0.1.4",
@@ -330,6 +340,14 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "5e3c5dc0b071b21fa128676560dbe94d",
+      "Requirements": []
+    },
+    "remotes": {
+      "Package": "remotes",
+      "Version": "2.4.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "227045be9aee47e6dda9bb38ac870d67",
       "Requirements": []
     },
     "renv": {

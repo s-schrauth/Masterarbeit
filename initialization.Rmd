@@ -17,10 +17,8 @@ Although most programs and packages (as R and Python) are installed automaticall
 
 ## R & R-Packages
 
-
+only for Windows
 ```{r}
-# only for Windows!
-
 if(!require(installr)) install.packages("installr")
 if(!require(remotes)) install.packages("remotes")
 
@@ -55,28 +53,37 @@ pandoc::pandoc_activate("2.19.2")
 
 For the automated installation of Python and the Python-packages, a conda environment ("Masterarbeit") is created with regard to the specifications saved in the "Masterarbeit.yaml" file (for Windows) or the "Masterarbeit_Mac_Linux.yaml" file (for Mac & Linux). After that, the conda environment is activated and the Python version is printed - which should be 3.10.6.
 
+### 1) Creating Conda-Environment
+
+#### 1a) for Windows
 ```{r}
-library(reticulate)
-library(here)
-
-# only for Windows
 reticulate::conda_create(envname = "Masterarbeit",
-                         environment = here("YAML", "Masterarbeit_short.yaml")
+                         environment = here::here("YAML", "Masterarbeit_short.yaml")
                          )
+```
 
-# only for Mac & Linux
+#### 1b) for Mac & Linux
+```{r}
 reticulate::conda_create(envname = "Masterarbeit",
-                         environment = here("YAML", "Masterarbeit_short_Mac_Linux.yaml")
+                         environment = here::here("YAML", "Masterarbeit_short_Mac_Linux.yaml")
                          )
+```
 
+### 2) Activate Conda-Environment
+```{r}
 reticulate::use_condaenv(condaenv = "Masterarbeit", 
                          required = TRUE)
 
+
+```
+
+### 3) Check if the environment creation worked
+
+```{r}
 reticulate::py_config()
 ```
 
 If the installation has worked, the following commands should print the number pi.
-
 ```{python}
 import numpy as np
 np.pi
