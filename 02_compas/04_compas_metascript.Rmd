@@ -1,0 +1,24 @@
+---
+title: "Compas - Meta-Script"
+author: "Simon Schrauth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+Wird das wirklich benötigt? -> Datensätze laden ja eher im jeweils folgenden Skript
+
+# Meta-Script for Compas Dataset
+
+## Goal
+
+This script calls all the compas scripts saved in "02_diabetes_scripts". Therefore, after executing this script, the compas dataset should be loaded, cleaned, modelled and visualized.
+
+## Install packages
+
+```{r}
+pacman::p_load(tidyverse, 
+               here,
+               reticulate)
+```
+
+

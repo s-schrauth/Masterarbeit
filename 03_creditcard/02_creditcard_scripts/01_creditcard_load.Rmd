@@ -1,0 +1,39 @@
+---
+title: "Creditcard - Load Data"
+author: "Simon Schrauth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Load Creditcard Dataset
+
+## Goal
+
+After executing this script, the creditcard dataset should be loaded.
+
+## Install packages
+
+```{r}
+pacman::p_load(tidyverse,
+               readxl,
+               here)
+```
+
+## Load data from csv-file
+
+```{r}
+cc_data_raw = read_xls(path = here("03_creditcard", "01_creditcard_data", "01_creditcard_data_raw", "creditcard_data.xls"), 
+                       col_names = TRUE,
+                       skip = 1)
+
+cc_data_raw
+```
+
+## Save data
+
+```{r}
+saveRDS(cc_data_raw, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "01_creditcard_data_load.rds")
+        )
+```
+

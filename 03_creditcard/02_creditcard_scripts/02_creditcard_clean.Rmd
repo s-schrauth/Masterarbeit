@@ -1,0 +1,332 @@
+---
+title: "Creditcard - Data Cleaning"
+author: "Simon Schrauth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Clean Creditcard Dataset
+
+## Goal
+
+After executing this script, the creditcard dataset should be cleaned and ready for modelling in Python.
+
+## Install packages
+
+```{r}
+pacman::p_load(tidyverse, 
+               here,
+               naniar,
+               reticulate,
+               wesanderson,
+               ggdist,
+               tidyquant)
+```
+
+## Load data
+
+```{r}
+cc_data_raw = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                  "01_creditcard_data_load.rds"))
+```
+
+## Glimpse on the data
+
+### Overview over data
+
+```{r}
+cc_data_raw
+```
+
+```{r}
+str(cc_data_raw)
+```
+
+### Check for Missing Values
+
+Table of absolute missing values per variable as well as percentage of missing values per variable
+
+```{r}
+miss_var_summary(cc_data_raw)
+```
+
+## Cleaning
+
+- make ID the rowname 
+- no missing values => 30000 cases in final dataset
+- relevel sex, education & marriage variables
+
+- change data type appropriately (factors with python?)
+
+```{r}
+cc_data_clean = cc_data_raw %>% 
+  arrange(ID) %>% 
+  column_to_rownames(var = "ID") %>% 
+  rename(default_payment = "default payment next month") %>% 
+  rename_with(tolower) %>% 
+  mutate(sex = fct_recode(as.character(sex), 
+                          male = "1",
+                          female = "2"),
+         education = fct_recode(as.character(education),
+                                 graduateschool = "1",
+                                 university = "2",
+                                 highschool = "3",
+                                 others = "0",
+                                 others = "4",
+                                 others = "5",
+                                 others = "6"),
+         marriage = fct_recode(as.character(marriage),
+                               married = "1",
+                               single = "2",
+                               others = "0",
+                               others = "3")        
+        )
+```
+
+## Exploratory Data Analysis
+### Dataset overview
+```{r}
+cc_data_clean
+```
+
+```{r}
+str(cc_data_clean)
+```
+
+### Visualization of the class variable (readmitted) & the protected variables (race, age & gender)
+
+#### Definition of colors
+```{r}
+colors_discrete = rep(wes_palette("Darjeeling1"), 3)
+```
+
+#### Class variable: Default Payment
+```{r}
+cc_eda_class = cc_data_clean %>% 
+  select(default_payment) %>% 
+  mutate(default_payment = ifelse(default_payment == 1, "yes", "no")) %>% 
+  ggplot(aes(x = fct_rev(fct_infreq(default_payment)), fill = fct_rev(fct_infreq(default_payment)))) +
+  geom_bar() +
+  labs(title = "Class Frequencies in the Creditcard Dataset",
+       subtitle = "With Class Variable 'Default Payment in the next month'",
+       x = "Default Payment in the next month", 
+       y = "Count") +
+  scale_fill_manual(values = colors_discrete) +
+  guides(fill = "none")
+
+cc_eda_class
+```
+
+```{r}
+ggsave("01_cc_eda_class.png",
+       plot = cc_eda_class,
+       device = "png",
+       path = here("03_creditcard", "03_creditcard_outputs", "03_creditcard_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+#### Protected variable: Sex
+```{r}
+cc_eda_sex = cc_data_clean %>% 
+  select(sex) %>% 
+  ggplot(aes(x = fct_infreq(sex), fill = fct_infreq(sex))) +
+  geom_bar() +
+  labs(title = "Sex Frequencies in the Creditcard Dataset",
+       x = "Sex", 
+       y = "Count") +
+  scale_fill_manual(values = colors_discrete) +
+  guides(fill = "none")
+
+cc_eda_sex
+```
+
+```{r}
+ggsave("02_cc_eda_sex.png",
+       plot = cc_eda_sex,
+       device = "png",
+       path = here("03_creditcard", "03_creditcard_outputs", "03_creditcard_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+#### Protected Variable: Marriage
+```{r}
+cc_eda_marriage = cc_data_clean %>% 
+  select(marriage) %>% 
+  ggplot(aes(x = fct_infreq(marriage), fill = fct_infreq(marriage))) +
+  geom_bar() +
+  labs(title = "Frequencies of Marriage Status in the Creditcard Dataset",
+       x = "Marriage Status", 
+       y = "Count") +
+  scale_fill_manual(values = colors_discrete) +
+  guides(fill = "none")
+
+cc_eda_marriage
+```
+```{r}
+ggsave("03_cc_eda_marriage.png",
+       plot = cc_eda_marriage,
+       device = "png",
+       path = here("03_creditcard", "03_creditcard_outputs", "03_creditcard_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+#### Protected variable: Age
+```{r}
+cc_eda_age_raincloud = cc_data_clean %>% 
+  select(age) %>% 
+  ggplot(aes(x = age, fill = factor(1))) +
+  ggdist::stat_halfeye(
+    adjust = 0.75,
+    justification = -.2,
+    .width = 0,
+    point_colour = NA
+  ) +
+  geom_boxplot(
+    width = .12,
+    outlier.colour = NA,
+    alpha = 0.5
+  ) +
+  labs(title = "Age Distribution in the Creditcard Dataset",
+       subtitle = "Probability Density Function & Boxplot",
+       x = "Age", 
+       y = "") +
+  scale_fill_manual(values = colors_discrete[3]) +
+  guides(fill = "none") +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank())
+
+cc_eda_age_raincloud
+```
+
+```{r}
+cc_eda_age_hist = cc_data_clean %>% 
+  select(age) %>% 
+  ggplot(aes(x = age, fill = factor(1))) +
+  geom_histogram(binwidth = 2) +
+  labs(title = "Age Distribution in the Creditcard Dataset",
+       subtitle = "Histogram with Binwidth 2",
+       x = "Age", 
+       y = "Density") +
+  scale_fill_manual(values = colors_discrete[3]) +
+  guides(fill = "none") 
+
+cc_eda_age_hist
+```
+
+
+```{r}
+ggsave("04_cc_eda_age_raincloud.png",
+       plot = cc_eda_age_raincloud,
+       device = "png",
+       path = here("03_creditcard", "03_creditcard_outputs", "03_creditcard_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+
+ggsave("05_cc_eda_age_hist.png",
+       plot = cc_eda_age_hist,
+       device = "png",
+       path = here("03_creditcard", "03_creditcard_outputs", "03_creditcard_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+#### Protected variables: Sex & Marriage Status
+```{r}
+cc_eda_sex_marriage = cc_data_clean %>% 
+  select(sex, marriage) %>% 
+  ggplot(aes(x =  fct_infreq(marriage), fill = fct_infreq(marriage))) +
+  geom_bar() +
+  facet_wrap(~sex) +
+  labs(title = "Frequencies of Marriage Status in the Creditdata Dataset",
+       subtitle = "Grouped by Sex",
+       x = "Marriage Status", 
+       y = "Count") +
+  scale_fill_manual(values = colors_discrete) +
+  guides(fill = "none") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+cc_eda_sex_marriage
+```
+
+```{r}
+ggsave("06_cc_eda_sex_marriage.png",
+       plot = cc_eda_sex_marriage,
+       device = "png",
+       path = here("03_creditcard", "03_creditcard_outputs", "03_creditcard_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+#### Protected variables: Sex & Age
+```{r}
+cc_eda_marriage_age = cc_data_clean %>% 
+  select(age, marriage) %>% 
+  ggplot(aes(x = marriage, y = age, fill = marriage)) +
+  ggdist::stat_halfeye(
+    adjust = 0.75,
+    justification = -.2,
+    .width = 0,
+    point_colour = NA
+  ) +
+  geom_boxplot(
+    width = .12,
+    outlier.colour = NA,
+    alpha = 0.5
+  ) +
+  labs(title = "Age Distribution in the Creditcard Dataset",
+       subtitle = "Grouped by Marriage Status",
+       x = "Marriage Status", 
+       y = "Age") +
+  scale_fill_manual(values = colors_discrete) +
+  guides(fill = "none") +
+  coord_flip()
+
+cc_eda_marriage_age
+```
+
+```{r}
+ggsave("07_cc_eda_marriage_age.png",
+       plot = cc_eda_marriage_age,
+       device = "png",
+       path = here("03_creditcard", "03_creditcard_outputs", "03_creditcard_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+
+```
+
+
+## Save data
+
+```{r}
+saveRDS(cc_data_clean, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "02_creditcard_data_clean.rds")
+        )
+```
+
+
+

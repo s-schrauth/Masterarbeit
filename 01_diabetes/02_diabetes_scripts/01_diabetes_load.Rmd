@@ -1,0 +1,39 @@
+---
+title: "Diabetes - Load Data"
+author: "Simon Schrauth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Load Diabetes Dataset
+
+## Goal
+
+After executing this script, the diabetes dataset should be loaded.
+
+## Install packages
+
+```{r}
+pacman::p_load(tidyverse, 
+               here)
+```
+
+## Load data from csv-file
+
+```{r}
+diab_data_raw = read_csv(file = here("01_diabetes", "01_diabetes_data", "01_diabetes_data_raw",
+                                     "diabetes_data_raw.csv"),
+                         col_names = TRUE,
+                         na = c("", "?"))
+
+diab_data_raw
+```
+
+## Save data
+
+```{r}
+saveRDS(diab_data_raw, 
+        file = here("01_diabetes", "01_diabetes_data", "02_diabetes_data_processed",
+                    "01_diabetes_data_load.rds")
+        )
+```
+

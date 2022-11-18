@@ -1,0 +1,235 @@
+---
+title: "Creditcard - Modelling"
+author: "Simon Schrauth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Model Creditcard Dataset
+
+## Goal
+
+After executing this script, a deep neural network for the creditcard dataset should be modelled.
+
+## Load R packages
+
+```{r}
+pacman::p_load(tidyverse, 
+               here,
+               reticulate)
+```
+
+## Activate Python environment
+
+```{r}
+reticulate::use_condaenv(condaenv = "Masterarbeit", 
+                         required = TRUE
+                         )
+```
+
+## Import Python packages
+
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
+```
+
+
+## Load data
+
+```{r}
+cc_data_clean = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                      "02_creditcard_data_clean.rds"))
+```
+
+## Get names of categorical variables
+
+```{r}
+cc_cat_varnames = cc_data_clean %>% 
+  select(where(is.factor)) %>% 
+  colnames()
+```
+
+
+## Transform to python data frame
+
+```{python}
+cc_data_clean = r.cc_data_clean
+cc_cat_varnames = r.cc_cat_varnames
+```
+
+
+## Preparation of the dataset
+
+### Ratios for training, testing and validation set
+```{python}
+cc_train_ratio = 0.75
+cc_validation_ratio = 0.15
+cc_test_ratio = 0.1
+```
+
+
+### Train-test-split for training and testing datasets
+```{python}
+cc_X_train_raw, cc_X_test_raw, cc_y_train, cc_y_test = train_test_split(cc_data_clean.iloc[:,:-1], 
+                                                                        cc_data_clean.iloc[:,-1], 
+                                                                        test_size=cc_test_ratio,
+                                                                        random_state=42,
+                                                                        shuffle = True)
+```
+
+### Train-test-split for training and validation datasets
+```{python}
+cc_X_train_raw, cc_X_val_raw, cc_y_train, cc_y_val = train_test_split(cc_X_train_raw, 
+                                                                      cc_y_train, 
+                                                                      test_size=cc_validation_ratio/(1-cc_test_ratio),
+                                                                      random_state=24,
+                                                                      shuffle = True)
+```
+
+### Reset all indices
+```{python}
+cc_X_train_raw = cc_X_train_raw.reset_index(drop=True)
+cc_y_train = cc_y_train.reset_index(drop=True)
+
+cc_X_val_raw = cc_X_val_raw.reset_index(drop=True)
+cc_y_val = cc_y_val.reset_index(drop=True)
+
+cc_X_test_raw = cc_X_test_raw.reset_index(drop=True)
+cc_y_test = cc_y_test.reset_index(drop=True)
+```
+
+### One-hot-encoding of training data
+```{python}
+cc_X_train = pd.get_dummies(cc_X_train_raw, 
+                                   columns = cc_cat_varnames, 
+                                   drop_first = False, 
+                                   dtype="int64")
+                              
+cc_X_train = cc_X_train.astype(float)
+```
+
+### One-hot-encoding of validation data
+```{python}
+cc_X_val = pd.get_dummies(cc_X_val_raw, 
+                                 columns = cc_cat_varnames, 
+                                 drop_first = False, 
+                                 dtype="int64")
+                            
+cc_X_val = cc_X_val.astype(float)
+```
+
+### One-hot-encoding of testing data
+```{python}
+cc_X_test = pd.get_dummies(cc_X_test_raw, 
+                                  columns = cc_cat_varnames, 
+                                  drop_first = False, 
+                                  dtype="int64")
+                            
+cc_X_test = cc_X_test.astype(float)
+```
+
+### Save column names for interpretation
+```{python}
+cc_col_names_enc = cc_X_train.columns.values.tolist()
+```
+
+```{python}
+cc_X_train
+cc_y_train
+
+cc_X_val
+cc_y_val
+
+cc_X_test
+cc_y_test
+
+cc_col_names_enc
+```
+
+### Save as RDS
+```{r}
+cc_X_train = py$cc_X_train
+saveRDS(cc_X_train, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "03_creditcard_data_model_X_train.rds")
+        )
+
+cc_y_train = py$cc_y_train
+saveRDS(cc_y_train, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "04_creditcard_data_model_y_train.rds")
+        )
+
+cc_X_val = py$cc_X_val
+saveRDS(cc_X_val, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "05_creditcard_data_model_X_val.rds")
+        )
+
+cc_y_val = py$cc_y_val
+saveRDS(cc_y_val, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "06_creditcard_data_model_y_val.rds")
+        )
+
+cc_X_test = py$cc_X_test
+saveRDS(cc_X_test, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "07_creditcard_data_model_X_test.rds")
+        )
+
+cc_y_test = py$cc_y_test
+saveRDS(cc_y_test, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "08_creditcard_data_model_y_test.rds")
+        )
+
+cc_col_names_enc = py$cc_col_names_enc
+saveRDS(cc_col_names_enc, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "09_creditcard_data_model_col_names_enc.rds")
+        )
+```
+
+### Load RDS
+```{r, eval=FALSE}
+cc_X_train = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                 "03_creditcard_data_model_X_train.rds"))
+
+cc_y_train = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                 "04_creditcard_data_model_y_train.rds"))
+
+cc_X_val = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                               "05_creditcard_data_model_X_val.rds"))
+
+cc_y_val = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                               "06_creditcard_data_model_y_val.rds"))
+
+cc_X_test = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                "07_creditcard_data_model_X_test.rds"))
+
+cc_y_test = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                "08_creditcard_data_model_y_test.rds"))
+
+cc_col_names_enc = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                       "09_creditcard_data_model_col_names_enc.rds"))
+```
+
+Transfer to python
+```{python, eval=FALSE}
+cc_X_train = r.cc_X_train
+cc_y_train = r.cc_y_train
+
+cc_X_val = r.cc_X_val
+cc_y_val = r.cc_y_val
+
+cc_X_test = r.cc_X_test
+cc_y_test = r.cc_y_test
+
+cc_col_names_enc = r.cc_col_names_enc
+```
+

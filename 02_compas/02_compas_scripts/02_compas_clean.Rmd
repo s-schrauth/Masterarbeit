@@ -1,0 +1,410 @@
+---
+title: "Compas - Data Cleaning"
+author: "Simon Schrauth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Clean Compas Dataset
+
+## Goal
+
+After executing this script, the compas dataset should be cleaned and ready for modelling in Python.
+
+## Install packages
+
+```{r}
+pacman::p_load(tidyverse, 
+               here,
+               naniar,
+               reticulate,
+               lubridate,
+               wesanderson,
+               ggdist)
+```
+
+## Load data
+
+```{r}
+compas_data_raw = readRDS(here("02_compas", "01_compas_data", "02_compas_data_processed",
+                               "01_compas_data_recid_load.rds"))
+```
+
+## Glimpse on the data
+
+### Overview over data
+
+```{r}
+compas_data_raw
+```
+
+```{r}
+str(compas_data_raw)
+```
+
+### Check for Missing Values
+
+Table of absolute missing values per variable as well as percentage of missing values per variable
+
+```{r}
+miss_var_summary(compas_data_raw)
+```
+
+Plot with most frequent missingn patterns with according absolute frequencies
+
+```{r}
+gg_miss_upset(compas_data_raw) 
+```
+
+## Cleaning
+
+- delete patient_nbr and make encounter_id the rowname 
+- delete weight, payer_code and medical_specialty, examide, citoglipton, metformin-rosiglitazone, metformin-pioglitazone
+- delete incomplete cases (wrt race, diag_1, diag_2, diag_2) = 3713 cases
+- delete cases with "no" in readmitted variable (no record of readmission) = 52338 cases
+=> 45,715 cases in final dataset
+
+- change readmitted into classes (with "<30" as positive class) -> rate of 1:3.13 (p:n)?
+- change data type appropriately (factors with python?)
+
+```{r}
+compas_data_clean = compas_data_raw %>% 
+  arrange(id) %>% 
+  column_to_rownames(var = "id") %>% 
+  select(sex, 
+         race,
+         age, 
+         #age_cat,
+         juv_fel_count,
+         juv_misd_count,
+         juv_other_count,
+         priors_count = priors_count...15, 
+         charge_degree = c_charge_degree, 
+         days_b_screening_arrest, 
+         is_recid, 
+         c_jail_in, 
+         c_jail_out,
+         #decile_score = decile_score...12,
+         two_year_recid) %>% 
+  filter(days_b_screening_arrest <= 30,
+         days_b_screening_arrest >= -30,
+         is_recid != -1,
+         charge_degree != "O") %>% 
+  mutate(c_jail_in = floor_date(c_jail_in, unit = "day"),
+         c_jail_out = floor_date(c_jail_out, unit = "day")) %>% 
+  mutate(days_in_jail = as.numeric(round(difftime(c_jail_out, 
+                                                  c_jail_in, 
+                                                  unit = "days")
+                                         )
+                                   )
+         ) %>% 
+  mutate(across(.cols = c(sex,
+                          race,
+                          charge_degree),
+                .fns = ~ factor(.))) %>% 
+  select(!c(days_b_screening_arrest,
+            c_jail_in,
+            c_jail_out,
+            is_recid)) %>%
+  select(sex,
+         race,
+         age,
+         days_in_jail,
+         juv_fel_count,
+         juv_misd_count,
+         juv_other_count,
+         priors_count,
+         charge_degree,
+         two_year_recid)
+```
+
+
+## Exploratory Data Analysis
+### Dataset overview
+```{r}
+compas_data_clean
+```
+
+```{r}
+str(compas_data_clean)
+```
+
+### Visualization of the class variable (readmitted) & the protected variables (race, age & gender)
+
+#### Definition of colors
+```{r}
+colors_discrete = rep(wes_palette("Darjeeling1"), 3)
+```
+
+#### Class variable: Recidivism
+```{r}
+compas_eda_class = compas_data_clean %>% 
+  select(two_year_recid) %>% 
+  mutate(two_year_recid = ifelse(two_year_recid == 1, "yes", "no")) %>% 
+  ggplot(aes(x = fct_rev(fct_infreq(two_year_recid)), fill = fct_rev(fct_infreq(two_year_recid)))) +
+  geom_bar() +
+  labs(title = "Class Frequencies in the Compas Dataset",
+       subtitle = "With Class Variable 'Recidivism after two years'",
+       x = "Recidivism", 
+       y = "Count") +
+  scale_fill_manual(values = colors_discrete) +
+  guides(fill = "none")
+
+compas_eda_class
+```
+
+```{r}
+ggsave("01_compas_eda_class.png",
+       plot = compas_eda_class,
+       device = "png",
+       path = here("02_compas", "03_compas_outputs", "03_compas_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+#### Protected variable: Race
+```{r}
+compas_eda_race = compas_data_clean %>% 
+  select(race) %>% 
+  ggplot(aes(x = fct_infreq(race), fill = fct_infreq(race))) +
+  geom_bar() +
+  labs(title = "Race Frequencies in the Compas Dataset",
+       x = "Race", 
+       y = "Count") +
+  scale_fill_manual(values = colors_discrete) +
+  guides(fill = "none")
+
+compas_eda_race
+```
+
+```{r}
+ggsave("02_compas_eda_race.png",
+       plot = compas_eda_race,
+       device = "png",
+       path = here("02_compas", "03_compas_outputs", "03_compas_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+#### Protected variable: Age
+```{r}
+compas_eda_age_raincloud = compas_data_clean %>% 
+  select(age) %>% 
+  ggplot(aes(x = age, fill = factor(1))) +
+  ggdist::stat_halfeye(
+    adjust = 0.75,
+    justification = -.2,
+    .width = 0,
+    point_colour = NA
+  ) +
+  geom_boxplot(
+    width = .12,
+    outlier.colour = NA,
+    alpha = 0.5
+  ) +
+  labs(title = "Age Distribution in the Compas Dataset",
+       subtitle = "Probability Density Function & Boxplot",
+       x = "Age", 
+       y = "") +
+  scale_fill_manual(values = colors_discrete[3]) +
+  guides(fill = "none") +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank())
+
+compas_eda_age_raincloud
+```
+
+```{r}
+compas_eda_age_hist = compas_data_clean %>% 
+  select(age) %>% 
+  ggplot(aes(x = age, fill = factor(1))) +
+  geom_histogram(binwidth = 2) +
+  labs(title = "Age Distribution in the Compas Dataset",
+       subtitle = "Histogram with Binwidth 2",
+       x = "Age", 
+       y = "Density") +
+  scale_fill_manual(values = colors_discrete[3]) +
+  guides(fill = "none") 
+
+compas_eda_age_hist
+```
+
+```{r}
+ggsave("03_compas_eda_age_raincloud.png",
+       plot = compas_eda_age_raincloud,
+       device = "png",
+       path = here("02_compas", "03_compas_outputs", "03_compas_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+
+ggsave("04_compas_eda_age_hist.png",
+       plot = compas_eda_age_hist,
+       device = "png",
+       path = here("02_compas", "03_compas_outputs", "03_compas_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+#### Protected variable: Gender
+```{r}
+compas_eda_sex = compas_data_clean %>% 
+  select(sex) %>% 
+  ggplot(aes(x = fct_infreq(sex), fill = fct_infreq(sex))) +
+  geom_bar() +
+  labs(title = "Sex Frequencies in the Compas Dataset",
+       x = "Sex", 
+       y = "Count") +
+  scale_fill_manual(values = colors_discrete) +
+  guides(fill = "none")
+
+compas_eda_sex
+```
+
+```{r}
+ggsave("05_compas_eda_sex.png",
+       plot = compas_eda_sex,
+       device = "png",
+       path = here("02_compas", "03_compas_outputs", "03_compas_outputs_graphs"),
+       dpi = 300,
+       width = 15,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+
+#### Protected variables: Race & Gender
+```{r}
+compas_eda_race_sex = compas_data_clean %>% 
+  select(race, sex) %>% 
+  ggplot(aes(x = sex, fill = sex)) +
+  geom_bar() +
+  facet_wrap(~race) +
+  labs(title = "Sex Frequencies in the Compas Dataset",
+       subtitle = "Grouped by Race",
+       x = "Sex", 
+       y = "Count") +
+  scale_fill_manual(values = colors_discrete) +
+  guides(fill = "none") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+compas_eda_race_sex
+```
+
+```{r}
+ggsave("06_compas_eda_race_sex.png",
+       plot = compas_eda_race_sex,
+       device = "png",
+       path = here("02_compas", "03_compas_outputs", "03_compas_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+
+
+#### Protected variables: Race & Age
+```{r}
+compas_eda_race_age = compas_data_clean %>% 
+  select(age, race) %>% 
+  ggplot(aes(x = race, y = age, fill = race)) +
+  ggdist::stat_halfeye(
+    adjust = 0.75,
+    justification = -.2,
+    .width = 0,
+    point_colour = NA
+  ) +
+  geom_boxplot(
+    width = .12,
+    outlier.colour = NA,
+    alpha = 0.5
+  ) +
+  labs(title = "Age Distribution in the Compas Dataset",
+       subtitle = "Grouped by Race",
+       x = "Race", 
+       y = "Age") +
+  scale_fill_manual(values = colors_discrete) +
+  guides(fill = "none") +
+  coord_flip()
+
+compas_eda_race_age
+```
+
+```{r}
+ggsave("07_compas_eda_race_age.png",
+       plot = compas_eda_race_age,
+       device = "png",
+       path = here("02_compas", "03_compas_outputs", "03_compas_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+
+#### Protected variables: Age & Gender
+```{r}
+compas_eda_sex_age = compas_data_clean %>% 
+  select(age, sex) %>% 
+  ggplot(aes(x = sex, y = age, fill = sex)) +
+  ggdist::stat_halfeye(
+    adjust = 0.75,
+    justification = -.09,
+    .width = 0,
+    point_colour = NA
+  ) +
+  geom_boxplot(
+    width = .12,
+    outlier.colour = NA,
+    alpha = 0.5
+  ) +
+  labs(title = "Age Distribution in the Compas Dataset",
+       subtitle = "Grouped by Sex",
+       x = "Sex", 
+       y = "Age") +
+  scale_fill_manual(values = colors_discrete) +
+  guides(fill = "none") +
+  coord_flip()
+
+compas_eda_sex_age
+```
+
+```{r}
+ggsave("08_compas_eda_sex_age.png",
+       plot = compas_eda_sex_age,
+       device = "png",
+       path = here("02_compas", "03_compas_outputs", "03_compas_outputs_graphs"),
+       dpi = 300,
+       width = 25,
+       height = 15,
+       units = c("cm")
+       )
+```
+
+
+## Save data
+
+```{r}
+saveRDS(compas_data_clean, 
+        file = here("02_compas", "01_compas_data", "02_compas_data_processed",
+                    "02_compas_data_clean.rds")
+        )
+```
+
+
+
