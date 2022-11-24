@@ -1,0 +1,98 @@
+---
+title: "Creditcard - Modelling"
+author: "Simon Schrauth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Model Creditcard Dataset
+
+## Goal
+
+After executing this script, a deep neural network for the creditcard dataset should be modeled.
+
+## Preparations
+
+### Load R packages
+
+```{r}
+pacman::p_load(tidyverse, 
+               here,
+               reticulate)
+```
+
+### Activate Python environment
+
+```{r}
+reticulate::use_condaenv(condaenv = "Masterarbeit", 
+                         required = TRUE
+                         )
+```
+
+### Import Python packages
+
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import tensorflow as tf
+```
+
+### Load data
+```{r}
+cc_X_train_pd = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                 "03_creditcard_data_model_X_train.rds"))
+
+cc_y_train_pd = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                 "04_creditcard_data_model_y_train.rds"))
+
+cc_X_val_pd = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                               "05_creditcard_data_model_X_val.rds"))
+
+cc_y_val_pd = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                               "06_creditcard_data_model_y_val.rds"))
+
+cc_X_test_pd = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                "07_creditcard_data_model_X_test.rds"))
+
+cc_y_test_pd = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                "08_creditcard_data_model_y_test.rds"))
+
+cc_col_names_enc = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                       "09_creditcard_data_model_col_names_enc.rds"))
+```
+
+### Transfer dataframes to python
+```{python}
+cc_X_train_pd = r.cc_X_train_pd
+cc_y_train_pd = r.cc_y_train_pd
+
+cc_X_val_pd = r.cc_X_val_pd
+cc_y_val_pd = r.cc_y_val_pd
+
+cc_X_test_pd = r.cc_X_test_pd
+cc_y_test_pd = r.cc_y_test_pd
+
+cc_col_names_enc = r.cc_col_names_enc
+```
+
+### Convert to Tensor
+
+```{python}
+cc_X_train = tf.convert_to_tensor(cc_X_train_pd)
+cc_y_train = tf.convert_to_tensor(cc_y_train_pd)
+
+cc_X_val = tf.convert_to_tensor(cc_X_val_pd)
+cc_y_val = tf.convert_to_tensor(cc_y_val_pd)
+
+cc_X_test = tf.convert_to_tensor(cc_X_test_pd)
+cc_y_test = tf.convert_to_tensor(cc_y_test_pd)
+```
+
+
+## Model Construction
+
+```{python}
+
+```
+

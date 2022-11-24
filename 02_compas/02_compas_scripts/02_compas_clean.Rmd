@@ -402,7 +402,7 @@ ggsave("08_compas_eda_sex_age.png",
 ```{r}
 saveRDS(compas_data_clean, 
         file = here("02_compas", "01_compas_data", "02_compas_data_processed",
-                    "02_compas_data_clean.rds")
+                    "03_compas_data_clean.rds")
         )
 ```
 

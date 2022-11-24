@@ -318,7 +318,6 @@ ggsave("07_cc_eda_marriage_age.png",
 
 ```
 
-
 ## Save data
 
 ```{r}

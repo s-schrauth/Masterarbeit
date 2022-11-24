@@ -75,6 +75,9 @@ diab_data_clean = diab_data_raw %>%
             medical_specialty,
             examide,
             citoglipton,
+            diag_1,
+            diag_2,
+            diag_3,
             "metformin-rosiglitazone",
             "metformin-pioglitazone")) %>% 
   drop_na() %>% 
@@ -84,9 +87,9 @@ diab_data_clean = diab_data_raw %>%
                           admission_type_id,
                           discharge_disposition_id,
                           admission_source_id,
-                          diag_1,
-                          diag_2,
-                          diag_3,
+                          # diag_1,
+                          # diag_2,
+                          # diag_3,
                           max_glu_serum,
                           A1Cresult,
                           metformin,

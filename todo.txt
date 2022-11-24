@@ -1,0 +1,3 @@
+Todos
+
+Funktionen in model_preparation unabhängig von Datensätzen machen (target value & .toarray()) & in globales Python-Dokument auslagern

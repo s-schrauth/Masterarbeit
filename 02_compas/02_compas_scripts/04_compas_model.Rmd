@@ -1,0 +1,78 @@
+---
+title: "Compas - Modelling"
+author: "Simon Schrauth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Model Compas Dataset
+
+## Goal
+
+After executing this script, a deep neural network for the compas dataset should be modeled.
+
+## Preparations
+
+### Load R packages
+
+```{r}
+pacman::p_load(tidyverse, 
+               here,
+               reticulate)
+```
+
+### Activate Python environment
+
+```{r}
+reticulate::use_condaenv(condaenv = "Masterarbeit", 
+                         required = TRUE
+                         )
+```
+
+### Import Python packages
+
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import tensorflow as tf
+```
+
+### Load data
+```{r}
+compas_X_train_pd = readRDS(file = here("02_compas", "01_compas_data", "02_compas_data_processed",
+                                     "04_compas_data_model_X_train.rds"))
+
+compas_y_train_pd = readRDS(file = here("02_compas", "01_compas_data", "02_compas_data_processed",
+                                     "05_compas_data_model_y_train.rds"))
+
+compas_X_val_pd = readRDS(file = here("02_compas", "01_compas_data", "02_compas_data_processed",
+                                   "06_compas_data_model_X_val.rds"))
+
+compas_y_val_pd = readRDS(file = here("02_compas", "01_compas_data", "02_compas_data_processed",
+                                   "07_compas_data_model_y_val.rds"))
+
+compas_X_test_pd = readRDS(file = here("02_compas", "01_compas_data", "02_compas_data_processed",
+                                    "08_compas_data_model_X_test.rds"))
+
+compas_y_test_pd = readRDS(file = here("02_compas", "01_compas_data", "02_compas_data_processed",
+                                    "09_compas_data_model_y_test.rds"))
+
+compas_col_names_enc = readRDS(file = here("02_compas", "01_compas_data", "02_compas_data_processed",
+                                           "10_compas_data_model_col_names_enc.rds"))
+```
+
+### Transfer dataframes to python
+```{python}
+compas_X_train_pd = r.compas_X_train_pd
+compas_y_train_pd = r.compas_y_train_pd
+
+compas_X_val_pd = r.compas_X_val_pd
+compas_y_val_pd = r.compas_y_val_pd
+
+compas_X_test_pd = r.compas_X_test_pd
+compas_y_test_pd = r.compas_y_test_pd
+
+compas_col_names_enc = r.compas_col_names_enc
+```
+

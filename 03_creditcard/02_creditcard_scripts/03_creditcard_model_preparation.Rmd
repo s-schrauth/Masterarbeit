@@ -1,0 +1,202 @@
+---
+title: "Creditcard - Model Preparation"
+author: "Simon Schrauth"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Preparation of the Creditcard Dataset for Modeling
+
+## Goal
+
+After executing this script, the creditcard dataset should be ready to be modeled as deep neural network in keras.
+
+## Preparations
+
+### Load R packages
+
+```{r}
+pacman::p_load(tidyverse, 
+               here,
+               reticulate)
+```
+
+### Activate Python environment
+
+```{r}
+reticulate::use_condaenv(condaenv = "Masterarbeit", 
+                         required = TRUE
+                         )
+```
+
+### Import Python packages
+
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.compose import make_column_transformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import make_column_selector
+from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
+```
+
+
+### Load data
+
+```{r}
+cc_data_clean = readRDS(file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                                    "02_creditcard_data_clean.rds"))
+```
+
+### Transform to python data frame
+
+```{python}
+cc_data_clean_pre = r.cc_data_clean
+```
+
+### Function for Standardization of the numeric features & One-Hot-Encoding of the categorical features
+
+```{python}
+# function for cleaning column names of add-ons from transformation steps (help function for feature_transformator below)
+def clean_colnames(colnames):
+  
+  # delete/replace some specific strings
+  clean_names = list(map(lambda x: x.replace("remainder__", "").replace("onehotencoder__", "").replace("standardscaler__", "").replace("-", "_").replace(" ", "_").replace("[", "").replace(")", ""), colnames))
+  
+  return(clean_names)
+
+
+
+# actual transformation function
+def cc_feature_transformator(df):
+  
+  # define transformation for each data type
+  column_trans = make_column_transformer(
+    
+      (OneHotEncoder(), make_column_selector(dtype_exclude = float)),      # dummy-encoding of categorical features
+      
+      (StandardScaler(), make_column_selector(pattern = "^(?!default_payment$).*$",dtype_include = float)),     # standardization of numerical features except target feature
+      
+      remainder = 'passthrough'   # target feature remains in its original binary state
+    )
+  
+  # create new dataframe with transformed features and column names 
+  new_df = pd.DataFrame(column_trans.fit_transform(df),
+                        index = df.index,
+                        columns = clean_colnames(column_trans.get_feature_names_out())
+                        )
+  return(new_df)
+
+```
+
+### Feature Transformation 
+
+```{python}
+cc_data_clean = cc_feature_transformator(cc_data_clean_pre)
+```
+
+
+## Preparation of the dataset
+
+### Ratios for training, testing and validation set
+```{python}
+cc_train_ratio = 0.75
+cc_validation_ratio = 0.15
+cc_test_ratio = 0.1
+```
+
+
+### Train-test-split for training and testing datasets
+```{python}
+cc_X_train_raw, cc_X_test_raw, cc_y_train_raw, cc_y_test_raw = train_test_split(cc_data_clean.iloc[:,:-1], 
+                                                                        cc_data_clean.iloc[:,-1], 
+                                                                        test_size=cc_test_ratio,
+                                                                        random_state=42,
+                                                                        shuffle = True)
+```
+
+### Train-test-split for training and validation datasets
+```{python}
+cc_X_train_raw, cc_X_val_raw, cc_y_train_raw, cc_y_val_raw = train_test_split(cc_X_train_raw, 
+                                                                      cc_y_train_raw, 
+                                                                      test_size=cc_validation_ratio/(1-cc_test_ratio),
+                                                                      random_state=24,
+                                                                      shuffle = True)
+```
+
+### Reset all indices
+```{python}
+cc_X_train = cc_X_train_raw.reset_index(drop=True)
+cc_y_train = cc_y_train_raw.reset_index(drop=True)
+
+cc_X_val = cc_X_val_raw.reset_index(drop=True)
+cc_y_val = cc_y_val_raw.reset_index(drop=True)
+
+cc_X_test = cc_X_test_raw.reset_index(drop=True)
+cc_y_test = cc_y_test_raw.reset_index(drop=True)
+```
+
+### Save column names for interpretation
+```{python}
+cc_col_names_enc = cc_X_train.columns.values.tolist()
+```
+
+```{python}
+cc_X_train
+cc_y_train
+
+cc_X_val
+cc_y_val
+
+cc_X_test
+cc_y_test
+
+cc_col_names_enc
+```
+
+### Save as RDS
+```{r}
+cc_X_train = py$cc_X_train
+saveRDS(cc_X_train, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "03_creditcard_data_model_X_train.rds")
+        )
+
+cc_y_train = py$cc_y_train
+saveRDS(cc_y_train, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "04_creditcard_data_model_y_train.rds")
+        )
+
+cc_X_val = py$cc_X_val
+saveRDS(cc_X_val, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "05_creditcard_data_model_X_val.rds")
+        )
+
+cc_y_val = py$cc_y_val
+saveRDS(cc_y_val, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "06_creditcard_data_model_y_val.rds")
+        )
+
+cc_X_test = py$cc_X_test
+saveRDS(cc_X_test, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "07_creditcard_data_model_X_test.rds")
+        )
+
+cc_y_test = py$cc_y_test
+saveRDS(cc_y_test, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "08_creditcard_data_model_y_test.rds")
+        )
+
+cc_col_names_enc = py$cc_col_names_enc
+saveRDS(cc_col_names_enc, 
+        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
+                    "09_creditcard_data_model_col_names_enc.rds")
+        )
+```
