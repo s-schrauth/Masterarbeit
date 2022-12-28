@@ -100,39 +100,20 @@ cc_data_clean = cc_feature_transformator(cc_data_clean_pre)
 
 ## Preparation of the dataset
 
-### Ratios for training, testing and validation set
-```{python}
-cc_train_ratio = 0.75
-cc_validation_ratio = 0.15
-cc_test_ratio = 0.1
-```
-
-
 ### Train-test-split for training and testing datasets
 ```{python}
 cc_X_train_raw, cc_X_test_raw, cc_y_train_raw, cc_y_test_raw = train_test_split(cc_data_clean.iloc[:,:-1], 
-                                                                        cc_data_clean.iloc[:,-1], 
-                                                                        test_size=cc_test_ratio,
-                                                                        random_state=42,
-                                                                        shuffle = True)
+                                                                                cc_data_clean.iloc[:,-1], 
+                                                                                test_size=0.1,
+                                                                                random_state=42,
+                                                                                shuffle = True)
 ```
 
-### Train-test-split for training and validation datasets
-```{python}
-cc_X_train_raw, cc_X_val_raw, cc_y_train_raw, cc_y_val_raw = train_test_split(cc_X_train_raw, 
-                                                                      cc_y_train_raw, 
-                                                                      test_size=cc_validation_ratio/(1-cc_test_ratio),
-                                                                      random_state=24,
-                                                                      shuffle = True)
-```
 
 ### Reset all indices
 ```{python}
 cc_X_train = cc_X_train_raw.reset_index(drop=True)
 cc_y_train = cc_y_train_raw.reset_index(drop=True)
-
-cc_X_val = cc_X_val_raw.reset_index(drop=True)
-cc_y_val = cc_y_val_raw.reset_index(drop=True)
 
 cc_X_test = cc_X_test_raw.reset_index(drop=True)
 cc_y_test = cc_y_test_raw.reset_index(drop=True)
@@ -146,9 +127,6 @@ cc_col_names_enc = cc_X_train.columns.values.tolist()
 ```{python}
 cc_X_train
 cc_y_train
-
-cc_X_val
-cc_y_val
 
 cc_X_test
 cc_y_test
@@ -170,33 +148,21 @@ saveRDS(cc_y_train,
                     "04_creditcard_data_model_y_train.rds")
         )
 
-cc_X_val = py$cc_X_val
-saveRDS(cc_X_val, 
-        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
-                    "05_creditcard_data_model_X_val.rds")
-        )
-
-cc_y_val = py$cc_y_val
-saveRDS(cc_y_val, 
-        file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
-                    "06_creditcard_data_model_y_val.rds")
-        )
-
 cc_X_test = py$cc_X_test
 saveRDS(cc_X_test, 
         file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
-                    "07_creditcard_data_model_X_test.rds")
+                    "05_creditcard_data_model_X_test.rds")
         )
 
 cc_y_test = py$cc_y_test
 saveRDS(cc_y_test, 
         file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
-                    "08_creditcard_data_model_y_test.rds")
+                    "06_creditcard_data_model_y_test.rds")
         )
 
 cc_col_names_enc = py$cc_col_names_enc
 saveRDS(cc_col_names_enc, 
         file = here("03_creditcard", "01_creditcard_data", "02_creditcard_data_processed",
-                    "09_creditcard_data_model_col_names_enc.rds")
+                    "07_creditcard_data_model_col_names_enc.rds")
         )
 ```

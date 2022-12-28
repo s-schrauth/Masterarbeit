@@ -100,5 +100,5 @@ np.pi
 
 ```{r}
 reticulate::conda_install(envname = "Masterarbeit",
-                          packages = "xxx")
+                          packages = "keras-tuner")
 ```
