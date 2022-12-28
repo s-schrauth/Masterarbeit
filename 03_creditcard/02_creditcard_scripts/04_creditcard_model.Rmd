@@ -36,6 +36,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
+from tensorflow import keras
+from scikeras.wrappers import KerasClassifier
+from sklearn.model_selection import PredefinedSplit
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from pathlib import Path
 ```
 
 ### Load data
@@ -64,14 +70,14 @@ cc_col_names_enc = readRDS(file = here("03_creditcard", "01_creditcard_data", "0
 
 ### Transfer dataframes to python
 ```{python}
-cc_X_train_pd = r.cc_X_train_pd
-cc_y_train_pd = r.cc_y_train_pd
+cc_X_train = r.cc_X_train_pd
+cc_y_train = r.cc_y_train_pd
 
-cc_X_val_pd = r.cc_X_val_pd
-cc_y_val_pd = r.cc_y_val_pd
+cc_X_val = r.cc_X_val_pd
+cc_y_val = r.cc_y_val_pd
 
-cc_X_test_pd = r.cc_X_test_pd
-cc_y_test_pd = r.cc_y_test_pd
+cc_X_test = r.cc_X_test_pd
+cc_y_test = r.cc_y_test_pd
 
 cc_col_names_enc = r.cc_col_names_enc
 ```
@@ -79,20 +85,179 @@ cc_col_names_enc = r.cc_col_names_enc
 ### Convert to Tensor
 
 ```{python}
-cc_X_train = tf.convert_to_tensor(cc_X_train_pd)
-cc_y_train = tf.convert_to_tensor(cc_y_train_pd)
-
-cc_X_val = tf.convert_to_tensor(cc_X_val_pd)
-cc_y_val = tf.convert_to_tensor(cc_y_val_pd)
-
-cc_X_test = tf.convert_to_tensor(cc_X_test_pd)
-cc_y_test = tf.convert_to_tensor(cc_y_test_pd)
+# cc_X_train = tf.convert_to_tensor(cc_X_train_pd)
+# cc_y_train = tf.convert_to_tensor(cc_y_train_pd)
+# 
+# cc_X_val = tf.convert_to_tensor(cc_X_val_pd)
+# cc_y_val = tf.convert_to_tensor(cc_y_val_pd)
+# 
+# cc_X_test = tf.convert_to_tensor(cc_X_test_pd)
+# cc_y_test = tf.convert_to_tensor(cc_y_test_pd)
 ```
-
 
 ## Model Construction
 
+### Preparation
+
+Combine train and validation dataset, save indices and define predefined split
+```{python}
+cc_X_trainval = pd.concat([cc_X_train, cc_X_val], axis = 0, ignore_index = True)
+cc_y_trainval = np.append(cc_y_train, cc_y_val)
+
+cc_trainval_index =  [-1] *  cc_X_train.shape[0] + [0] * cc_X_val.shape[0]   
+
+cc_ps = PredefinedSplit(test_fold=cc_trainval_index)
+```
+
+
+Define certain global variables
+```{python}
+feature_num = cc_X_train.shape[-1]
+
+batch_size = 32
+epochs = 5
+```
+
+
 ```{python}
 
+
+# cc_model = keras.Sequential(
+#     [
+#         keras.layers.Input(shape = (feature_num,), 
+#                            name = "input_layer"),
+#         keras.layers.Dense(units = feature_num, 
+#                            activation="relu", 
+#                            name = "hidden_layer_1"),
+#         keras.layers.Dense(units = 10, 
+#                            activation="relu", 
+#                            name = "hidden_layer_2"),
+#         keras.layers.Dense(units = 1, 
+#                            activation="sigmoid", 
+#                            name = "output_layer"), 
+#     ],
+#     name = "cc_model"
+# )
+# 
+# cc_model.summary()
+```
+
+
+```{python}
+def define_model(activation = "relu", 
+                 units_layer1 = feature_num, 
+                 units_layer2 = np.around(feature_num/2), 
+                 optimizer = "SGD"):
+                   
+  model = keras.Sequential(
+    [
+        keras.layers.Input(shape = (feature_num,), 
+                           name = "input_layer"),
+
+        # keras.layers.Dropout(rate = 0.2, seed = 324095),
+                           
+        keras.layers.Dense(units = units_layer1, 
+                           activation = activation, 
+                           name = "hidden_layer_1"),
+                           
+        # keras.layers.Dropout(rate = 0.3, seed = 957485),
+        
+        keras.layers.Dense(units = units_layer2, 
+                           activation = activation, 
+                           name = "hidden_layer_2"),
+                           
+        # keras.layers.Dropout(rate = 0.3, seed = 389459),
+        
+        keras.layers.Dense(units = 1, 
+                           activation = "sigmoid", 
+                           name = "output_layer"), 
+    ]
+  )
+  
+  # model.compile(loss = "binary_crossentropy",
+  #               optimizer = optimizer,
+  #               metrics = ["acc", "AUC"])
+  
+  return model
+```
+
+
+
+```{python}
+model = KerasClassifier(model = define_model,
+                        activation = "relu",
+                        units_layer1 = feature_num, 
+                        units_layer2 = np.around(feature_num/2), 
+                        loss = "binary_crossentropy",
+                        optimizer = "SGD",
+                        epochs = epochs,
+                        batch_size = batch_size,
+                        verbose = 1)
+                        
+activation = ["relu", "sigmoid"]
+# activation = ["relu"]
+optimizer = ["SGD", "rmsprop", "Adam"]
+# what are those?
+# optimizer = ["SGD"]
+# optimizer__learning_rate = [0.001, 0.01, 0.1] #!!!!!
+
+units_layer1 = np.around(np.linspace(start = feature_num/2, 
+                                     stop = feature_num/1, 
+                                     num = 3)
+                        )
+   
+units_layer2 = np.around(np.linspace(start = feature_num/4, 
+                                     stop = feature_num/1.25, 
+                                     num = 3)
+                        ) 
+
+param_grid = dict(activation = activation, 
+                  optimizer = optimizer,
+                  units_layer1 = units_layer1,
+                  units_layer2 = units_layer2)
+                  
+grid = GridSearchCV(estimator = model,
+                    param_grid = param_grid,
+                    scoring = ["accuracy", "roc_auc", "f1", "recall"],
+                    refit = "recall", #!!!!!
+                    cv = cc_ps) 
+
+grid_result = grid.fit(cc_X_trainval, cc_y_trainval) 
+
+grid_result.best_score_
+grid_result.best_params_
+grid_result.best_estimator_
+
+final_model = grid_result.best_estimator_
+
+final_model.build_fn
+
+cc_model = final_model.fit(cc_X_trainval, cc_y_trainval, batch_size = batch_size, epochs = epochs)
+
+cc_results = cc_model.score(cc_X_val, cc_y_val)
+
+cc_results
+
+cc_cf = confusion_matrix(y_true = cc_y_train, y_pred = cc_model.predict(cc_X_train))
+
+cc_cf_vis = ConfusionMatrixDisplay(cc_cf)
+cc_cf_vis.plot()
+
+plt.show()
+```
+
+```{python}
+cc_data_path = Path.cwd().parent.joinpath("01_creditcard_data", "01_creditcard_data_processed")
+
+cc_model.save(cc_data_path)
+
+
+
+
+```
+```{python}
+param = grid_result.best_params_
+
+xyz = define_model
 ```
 

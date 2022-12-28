@@ -1,3 +1,5 @@
 Todos
 
-Funktionen in model_preparation unabhängig von Datensätzen machen (target value & .toarray()) & in globales Python-Dokument auslagern
+- Funktionen in model_preparation unabhängig von Datensätzen machen (target value & .toarray()) & in globales Python-Dokument auslagern
+- Model-Funktion in globales Python-Dokument auslagern
+- neue Anaconda-Pakete sauber in yaml-Dateien eintragen (scikeras) (geht nur über pip install in anaconda ???)
